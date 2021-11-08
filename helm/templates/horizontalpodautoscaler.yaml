@@ -1,0 +1,12 @@
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: epam
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Values.deployment.metadata.name  }}-deployment
+  minReplicas: {{ .Values.hba.minscalereplica }}
+  maxReplicas: {{ .Values.hba.maxscalereplica }}
+  targetCPUUtilizationPercentage: {{ .Values.hba.targetCPUUtilizationPercentage }}

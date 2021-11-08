@@ -1,0 +1,88 @@
+dev_publish:
+  stage: build
+  tags:
+    - docker-publish
+  when: manual
+  only:
+    - dev
+  image: 
+    name: amazon/aws-cli:2.2.37
+    entrypoint: [""]
+  services:
+    - docker:dind
+  before_script:
+    - amazon-linux-extras install docker
+    - aws --version
+    - docker --version
+  script:
+    # При каждом коммите, в commit message  ОБЯЗАТЕЛЬНО НУЖНО УКАЗАТЬ ВЕРСИЮ приложения
+    - docker build -t "$ECR_ENDPOINT:$CI_COMMIT_MESSAGE" .
+    - aws ecr get-login-password | docker login --username AWS --password-stdin $ECR_ENDPOINT
+    - docker push $ECR_ENDPOINT:$CI_COMMIT_MESSAGE
+
+dev_deploy:
+  stage: deploy
+  when: manual
+  tags:
+    - helm
+  only:
+    - dev
+  script:
+    # Установка aws-iam-authenticator
+    - curl -o aws-iam-authenticator https://amazon-eks.s3.us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/aws-iam-authenticator
+    - chmod +x ./aws-iam-authenticator
+    - mkdir -p $HOME/bin && cp ./aws-iam-authenticator $HOME/bin/aws-iam-authenticator && export PATH=$PATH:$HOME/bin
+    - echo 'export PATH=$PATH:$HOME/bin' >> ~/.bashrc
+    # Helm package - создаем чарт
+    - helm package helm/ --app-version=$CI_COMMIT_MESSAGE --version=$CI_COMMIT_MESSAGE
+    # Helm push into s3 bucket helm repo
+    - helm s3 push starwars-app-"$CI_COMMIT_MESSAGE".tgz "$HELM_REPO_S3_NAME"-"$CI_COMMIT_BRANCH"
+    # Cleaning
+    - rm -rf ./starwars-app-$CI_COMMIT_MESSAGE.tgz  
+    # Helm deploy
+    - helm upgrade
+      --kubeconfig $KUBECONFIG
+      --version $CI_COMMIT_MESSAGE
+      --namespace $CI_COMMIT_BRANCH
+      --install
+      --set ingress.prefix=/"$CI_COMMIT_BRANCH"
+      --set deployment.container.image=$ECR_ENDPOINT:$CI_COMMIT_MESSAGE
+      --set secret.rds_db_port=5432
+      --set secret.rds_db_ip=$RDS_ENDPOINT
+      --set secret.rds_db_name=$AWS_RDS_STARWARS_DB_NAME
+      --set secret.rds_db_username=$AWS_RDS_STARWARS_DB_USER
+      --set secret.rds_db_password=$AWS_RDS_STARWARS_DB_PASS
+      $APP_NAME "$HELM_REPO_S3_NAME"-"$CI_COMMIT_BRANCH"/starwars-app
+
+smoke_test:
+  stage: smoke_test
+  when: manual
+  tags:
+    - helm
+  only:
+    - dev
+  script:
+    # Установка aws-iam-authenticator
+    - curl -o aws-iam-authenticator https://amazon-eks.s3.us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/aws-iam-authenticator
+    - chmod +x ./aws-iam-authenticator
+    - mkdir -p $HOME/bin && cp ./aws-iam-authenticator $HOME/bin/aws-iam-authenticator && export PATH=$PATH:$HOME/bin
+    - echo 'export PATH=$PATH:$HOME/bin' >> ~/.bashrc
+    # Запуск теста
+    - python3 tests/smoke.py $CI_COMMIT_BRANCH
+
+smoke_dev:
+  stage: smoke_test
+  when: manual
+  tags:
+    - helm
+  only:
+    - dev
+  script:
+    # Установка aws-iam-authenticator
+    - curl -o aws-iam-authenticator https://amazon-eks.s3.us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/aws-iam-authenticator
+    - chmod +x ./aws-iam-authenticator
+    - mkdir -p $HOME/bin && cp ./aws-iam-authenticator $HOME/bin/aws-iam-authenticator && export PATH=$PATH:$HOME/bin
+    - echo 'export PATH=$PATH:$HOME/bin' >> ~/.bashrc
+    # Запуск теста
+    - python3 tests/smoke.py $CI_COMMIT_BRANCH
+

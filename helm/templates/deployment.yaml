@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deployment.metadata.name  }}-deployment
+  labels:
+    app: {{ .Values.deployment.metadata.labels  }}
+spec:
+  replicas: {{ .Values.replicaCount  }}
+  selector:
+    matchLabels:
+      app: {{ .Values.deployment.spec.selector.matchLabels.app  }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.deployment.spec.template.metadata.labels.app  }}
+    spec:
+      containers:
+      - name: {{ .Values.deployment.container.name  }}
+        image: {{ .Values.deployment.container.image  }}
+        imagePullPolicy: Always
+        env:
+        - name: DB_PORT
+          value: {{ .Values.secret.rds_db_port | quote}}
+        - name: DB_IP
+          value: {{ .Values.secret.rds_db_ip }}
+        - name: DB_NAME
+          value: {{ .Values.secret.rds_db_name }}
+        - name: DB_USERNAME
+          value: {{ .Values.secret.rds_db_username }}
+        - name: DB_PASSWORD
+          value: {{ .Values.secret.rds_db_password }}
+        ports:
+        - containerPort: 5000
+        resources:
+          requests:
+            memory: "30Mi"
+            cpu: "200m"
+          limits:
+            memory: "100Mi"
+            cpu: "400m"
+

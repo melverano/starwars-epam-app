@@ -1,0 +1,39 @@
+deployment:
+  container:
+    name: starwars
+    image: 
+  spec:
+    selector:
+      matchLabels:
+        app: epam
+    template:
+      metadata:
+        labels:
+          app: epam
+  metadata:
+    name: starwars
+    labels: epam
+
+replicaCount: 2
+
+service:
+  name: starwars-service
+  spec:
+    selector:
+      app: epam
+
+ingress:
+  name: starwars-ingress
+  prefix: 
+
+hba:
+  minscalereplica: 2
+  maxscalereplica: 10
+  targetCPUUtilizationPercentage: 40
+
+secret:
+  rds_db_port:
+  rds_db_ip:
+  rds_db_name:
+  rds_db_username:
+  rds_db_password:

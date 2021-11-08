@@ -1,0 +1,38 @@
+.site-header {
+    background-color: rgba(0, 0, 0, .85);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+}
+
+.site-header a {
+    color: #999;
+    transition: ease-in-out color .15s;
+}
+
+a {
+    color: #007bff;
+    text-decoration: none !important;
+    background-color: transparent;
+    -webkit-text-decoration-skip: objects;
+}
+
+a:-webkit-any-link {
+
+    cursor: pointer;
+
+}
+
+a:hover {
+ /* Цвет фона под ссылкой */
+    color: white !important; /* Цвет ссылки */
+}
+
+.rounded {
+    border: 1px solid #b5b1b1;
+    margin: 10px;
+    border-radius: .25rem!important;
+}
+
+
+
+
