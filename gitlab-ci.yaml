@@ -1,0 +1,15 @@
+variables:
+  APP_NAME: starwars
+
+stages:
+  - test
+  - build
+  - deploy
+  - smoke_test
+  - clean
+
+include:
+  - 'CICD/test_env.yaml'
+  - 'CICD/dev_env.yaml'
+  - 'CICD/prod_env.yaml'
+
